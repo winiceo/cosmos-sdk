@@ -42,13 +42,5 @@ type Account interface {
 	Set(key interface{}, value interface{}) error
 }
 
-// AccountMapper stores and retrieves accounts from stores
-// retrieved from the context.
-type AccountMapper interface {
-	NewAccountWithAddress(ctx Context, addr Address) Account
-	GetAccount(ctx Context, addr Address) Account
-	SetAccount(ctx Context, acc Account)
-}
-
 // AccountDecoder unmarshals account bytes
 type AccountDecoder func(accountBytes []byte) (Account, error)

@@ -1,4 +1,4 @@
-package auth
+package types
 
 import (
 	"bytes"
@@ -7,33 +7,28 @@ import (
 
 	oldwire "github.com/tendermint/go-wire"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
 	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
-var _ sdk.AccountMapper = (*accountMapper)(nil)
-var _ sdk.AccountMapper = (*sealedAccountMapper)(nil)
-
-// Implements sdk.AccountMapper.
-// This AccountMapper encodes/decodes accounts using the
-// go-wire (binary) encoding/decoding library.
-type accountMapper struct {
+// This AccountMapper encodes/decodes accounts from stores retrieved from
+// the context using the go-wire (binary) encoding/decoding library.
+type AccountMapper struct {
 
 	// The (unexposed) key used to access the store from the Context.
-	key sdk.StoreKey
+	key StoreKey
 
-	// The prototypical sdk.Account concrete type.
-	proto sdk.Account
+	// The prototypical Account concrete type.
+	proto Account
 
 	// The wire codec for binary encoding/decoding of accounts.
 	cdc *wire.Codec
 }
 
-// NewAccountMapper returns a new sdk.AccountMapper that
-// uses go-wire to (binary) encode and decode concrete sdk.Accounts.
-func NewAccountMapper(key sdk.StoreKey, proto sdk.Account) accountMapper {
+// NewAccountMapper returns a new AccountMapper that
+// uses go-wire to (binary) encode and decode concrete Accounts.
+func NewAccountMapper(key StoreKey, proto Account) AccountMapper {
 	cdc := wire.NewCodec()
-	return accountMapper{
+	return AccountMapper{
 		key:   key,
 		proto: proto,
 		cdc:   cdc,
@@ -41,43 +36,41 @@ func NewAccountMapper(key sdk.StoreKey, proto sdk.Account) accountMapper {
 }
 
 // Create and return a sealed account mapper
-func NewAccountMapperSealed(key sdk.StoreKey, proto sdk.Account) sealedAccountMapper {
+func NewAccountMapperSealed(key StoreKey, proto Account) sealedAccountMapper {
 	cdc := wire.NewCodec()
-	am := accountMapper{
+	am := AccountMapper{
 		key:   key,
 		proto: proto,
 		cdc:   cdc,
 	}
-	RegisterWireBaseAccount(cdc)
+	RegisterWireProtoAccount(cdc)
 
-	// make accountMapper's WireCodec() inaccessible, return
+	// make AccountMapper's WireCodec() inaccessible, return
 	return am.Seal()
 }
 
 // Returns the go-wire codec.  You may need to register interfaces
-// and concrete types here, if your app's sdk.Account
+// and concrete types here, if your app's Account
 // implementation includes interface fields.
 // NOTE: It is not secure to expose the codec, so check out
 // .Seal().
-func (am accountMapper) WireCodec() *wire.Codec {
+func (am AccountMapper) WireCodec() *wire.Codec {
 	return am.cdc
 }
 
 // Returns a "sealed" accountMapper.
 // The codec is not accessible from a sealedAccountMapper.
-func (am accountMapper) Seal() sealedAccountMapper {
+func (am AccountMapper) Seal() sealedAccountMapper {
 	return sealedAccountMapper{am}
 }
 
-// Implements sdk.AccountMapper.
-func (am accountMapper) NewAccountWithAddress(ctx sdk.Context, addr sdk.Address) sdk.Account {
+func (am AccountMapper) NewAccountWithAddress(ctx Context, addr Address) Account {
 	acc := am.clonePrototype()
 	acc.SetAddress(addr)
 	return acc
 }
 
-// Implements sdk.AccountMapper.
-func (am accountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) sdk.Account {
+func (am AccountMapper) GetAccount(ctx Context, addr Address) Account {
 	store := ctx.KVStore(am.key)
 	bz := store.Get(addr)
 	if bz == nil {
@@ -87,8 +80,7 @@ func (am accountMapper) GetAccount(ctx sdk.Context, addr sdk.Address) sdk.Accoun
 	return acc
 }
 
-// Implements sdk.AccountMapper.
-func (am accountMapper) SetAccount(ctx sdk.Context, acc sdk.Account) {
+func (am AccountMapper) SetAccount(ctx Context, acc Account) {
 	addr := acc.GetAddress()
 	store := ctx.KVStore(am.key)
 	bz := am.encodeAccount(acc)
@@ -99,7 +91,7 @@ func (am accountMapper) SetAccount(ctx sdk.Context, acc sdk.Account) {
 // sealedAccountMapper
 
 type sealedAccountMapper struct {
-	accountMapper
+	AccountMapper
 }
 
 // There's no way for external modules to mutate the
@@ -112,12 +104,12 @@ func (sam sealedAccountMapper) WireCodec() *wire.Codec {
 // misc.
 
 // NOTE: currently unused
-func (am accountMapper) clonePrototypePtr() interface{} {
+func (am AccountMapper) clonePrototypePtr() interface{} {
 	protoRt := reflect.TypeOf(am.proto)
 	if protoRt.Kind() == reflect.Ptr {
 		protoErt := protoRt.Elem()
 		if protoErt.Kind() != reflect.Struct {
-			panic("accountMapper requires a struct proto sdk.Account, or a pointer to one")
+			panic("accountMapper requires a struct proto Account, or a pointer to one")
 		}
 		protoRv := reflect.New(protoErt)
 		return protoRv.Interface()
@@ -128,30 +120,30 @@ func (am accountMapper) clonePrototypePtr() interface{} {
 }
 
 // Creates a new struct (or pointer to struct) from am.proto.
-func (am accountMapper) clonePrototype() sdk.Account {
+func (am AccountMapper) clonePrototype() Account {
 	protoRt := reflect.TypeOf(am.proto)
 	if protoRt.Kind() == reflect.Ptr {
 		protoCrt := protoRt.Elem()
 		if protoCrt.Kind() != reflect.Struct {
-			panic("accountMapper requires a struct proto sdk.Account, or a pointer to one")
+			panic("accountMapper requires a struct proto Account, or a pointer to one")
 		}
 		protoRv := reflect.New(protoCrt)
-		clone, ok := protoRv.Interface().(sdk.Account)
+		clone, ok := protoRv.Interface().(Account)
 		if !ok {
-			panic(fmt.Sprintf("accountMapper requires a proto sdk.Account, but %v doesn't implement sdk.Account", protoRt))
+			panic(fmt.Sprintf("accountMapper requires a proto Account, but %v doesn't implement Account", protoRt))
 		}
 		return clone
 	} else {
 		protoRv := reflect.New(protoRt).Elem()
-		clone, ok := protoRv.Interface().(sdk.Account)
+		clone, ok := protoRv.Interface().(Account)
 		if !ok {
-			panic(fmt.Sprintf("accountMapper requires a proto sdk.Account, but %v doesn't implement sdk.Account", protoRt))
+			panic(fmt.Sprintf("accountMapper requires a proto Account, but %v doesn't implement Account", protoRt))
 		}
 		return clone
 	}
 }
 
-func (am accountMapper) encodeAccount(acc sdk.Account) []byte {
+func (am AccountMapper) encodeAccount(acc Account) []byte {
 	bz, err := am.cdc.MarshalBinary(acc)
 	if err != nil {
 		panic(err)
@@ -159,15 +151,15 @@ func (am accountMapper) encodeAccount(acc sdk.Account) []byte {
 	return bz
 }
 
-func (am accountMapper) decodeAccount(bz []byte) sdk.Account {
+func (am AccountMapper) decodeAccount(bz []byte) Account {
 	// ... old go-wire ...
 	r, n, err := bytes.NewBuffer(bz), new(int), new(error)
-	accI := oldwire.ReadBinary(struct{ sdk.Account }{}, r, len(bz), n, err)
+	accI := oldwire.ReadBinary(struct{ Account }{}, r, len(bz), n, err)
 	if *err != nil {
 		panic(*err)
 	}
 
-	acc := accI.(struct{ sdk.Account }).Account
+	acc := accI.(struct{ Account }).Account
 	return acc
 
 	/*
@@ -177,9 +169,17 @@ func (am accountMapper) decodeAccount(bz []byte) sdk.Account {
 				panic(err)
 			}
 			if reflect.ValueOf(am.proto).Kind() == reflect.Ptr {
-				return reflect.ValueOf(accPtr).Interface().(sdk.Account)
+				return reflect.ValueOf(accPtr).Interface().(Account)
 			} else {
-				return reflect.ValueOf(accPtr).Elem().Interface().(sdk.Account)
+				return reflect.ValueOf(accPtr).Elem().Interface().(Account)
 			}
 	*/
+}
+
+//----------------------------------------
+// Wire
+
+func RegisterWireProtoAccount(cdc *wire.Codec) {
+	// Register crypto.[PubKey,PrivKey,Signature] types.
+	wire.RegisterCrypto(cdc)
 }
