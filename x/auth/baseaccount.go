@@ -6,7 +6,6 @@ import (
 	"github.com/tendermint/go-crypto"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/wire"
 )
 
 //-----------------------------------------------------------
@@ -88,12 +87,4 @@ func (acc *BaseAccount) GetSequence() int64 {
 func (acc *BaseAccount) SetSequence(seq int64) error {
 	acc.Sequence = seq
 	return nil
-}
-
-//----------------------------------------
-// Wire
-
-func RegisterWireBaseAccount(cdc *wire.Codec) {
-	// Register crypto.[PubKey,PrivKey,Signature] types.
-	wire.RegisterCrypto(cdc)
 }
