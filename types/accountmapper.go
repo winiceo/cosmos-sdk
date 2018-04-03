@@ -26,42 +26,23 @@ type AccountMapper struct {
 
 // NewAccountMapper returns a new AccountMapper that
 // uses go-wire to (binary) encode and decode concrete Accounts.
-func NewAccountMapper(key StoreKey, proto Account) AccountMapper {
+func NewAccountMapper(key StoreKey, proto Account, additional ...interface{}) AccountMapper {
 	cdc := wire.NewCodec()
+
+	RegisterWireProtoAccount(cdc)
+
+	for _, obj := range additional {
+		cdc.RegisterInterface((*MyInterface2)(nil), nil)
+		cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
+	}
+
+	//cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
+
 	return AccountMapper{
 		key:   key,
 		proto: proto,
 		cdc:   cdc,
 	}
-}
-
-// Create and return a sealed account mapper
-func NewAccountMapperSealed(key StoreKey, proto Account) sealedAccountMapper {
-	cdc := wire.NewCodec()
-	am := AccountMapper{
-		key:   key,
-		proto: proto,
-		cdc:   cdc,
-	}
-	RegisterWireProtoAccount(cdc)
-
-	// make AccountMapper's WireCodec() inaccessible, return
-	return am.Seal()
-}
-
-// Returns the go-wire codec.  You may need to register interfaces
-// and concrete types here, if your app's Account
-// implementation includes interface fields.
-// NOTE: It is not secure to expose the codec, so check out
-// .Seal().
-func (am AccountMapper) WireCodec() *wire.Codec {
-	return am.cdc
-}
-
-// Returns a "sealed" accountMapper.
-// The codec is not accessible from a sealedAccountMapper.
-func (am AccountMapper) Seal() sealedAccountMapper {
-	return sealedAccountMapper{am}
 }
 
 func (am AccountMapper) NewAccountWithAddress(ctx Context, addr Address) Account {
@@ -85,19 +66,6 @@ func (am AccountMapper) SetAccount(ctx Context, acc Account) {
 	store := ctx.KVStore(am.key)
 	bz := am.encodeAccount(acc)
 	store.Set(addr, bz)
-}
-
-//----------------------------------------
-// sealedAccountMapper
-
-type sealedAccountMapper struct {
-	AccountMapper
-}
-
-// There's no way for external modules to mutate the
-// sam.accountMapper.ctx from here, even with reflection.
-func (sam sealedAccountMapper) WireCodec() *wire.Codec {
-	panic("accountMapper is sealed")
 }
 
 //----------------------------------------
