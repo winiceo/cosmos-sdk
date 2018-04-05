@@ -53,7 +53,7 @@ func NewDemocoinApp(logger log.Logger, dbs map[string]dbm.DB) *DemocoinApp {
 	}
 
 	// define the accountMapper
-	app.accountMapper = auth.NewAccountMapperSealed(
+	app.accountMapper = sdk.NewAccountMapper(
 		app.capKeyMainStore, // target store
 		&types.AppAccount{}, // prototype
 	)

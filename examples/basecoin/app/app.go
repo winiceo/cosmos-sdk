@@ -51,7 +51,7 @@ func NewBasecoinApp(logger log.Logger, dbs map[string]dbm.DB) *BasecoinApp {
 	}
 
 	// define the accountMapper
-	app.accountMapper = sdk.NewAccountMapperSealed(
+	app.accountMapper = sdk.NewAccountMapper(
 		app.capKeyMainStore, // target store
 		&types.AppAccount{}, // prototype
 	)

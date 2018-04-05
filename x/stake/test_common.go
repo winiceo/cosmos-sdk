@@ -117,7 +117,7 @@ func createTestInput(t *testing.T, sender sdk.Address, isCheckTx bool, initCoins
 
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "foochainid"}, isCheckTx, nil)
 	cdc := makeTestCodec()
-	accountMapper := auth.NewAccountMapperSealed(
+	accountMapper := sdk.NewAccountMapper(
 		keyMain,             // target store
 		&auth.BaseAccount{}, // prototype
 	)
