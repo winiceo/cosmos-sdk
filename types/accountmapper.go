@@ -26,17 +26,10 @@ type AccountMapper struct {
 
 // NewAccountMapper returns a new AccountMapper that
 // uses go-wire to (binary) encode and decode concrete Accounts.
-func NewAccountMapper(key StoreKey, proto Account, additional ...interface{}) AccountMapper {
+func NewAccountMapper(key StoreKey, proto Account) AccountMapper {
 	cdc := wire.NewCodec()
 
 	RegisterWireProtoAccount(cdc)
-
-	for _, obj := range additional {
-		cdc.RegisterInterface((*MyInterface2)(nil), nil)
-		cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
-	}
-
-	//cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
 
 	return AccountMapper{
 		key:   key,
@@ -44,6 +37,30 @@ func NewAccountMapper(key StoreKey, proto Account, additional ...interface{}) Ac
 		cdc:   cdc,
 	}
 }
+
+// The following is for future to secure the WireCodec and replace the seal functionality.
+// Blocked on go-amino.
+
+// // NewAccountMapper returns a new AccountMapper that
+// // uses go-wire to (binary) encode and decode concrete Accounts.
+// func NewAccountMapper(key StoreKey, proto Account, additional ...interface{}) AccountMapper {
+// 	cdc := wire.NewCodec()
+
+// 	RegisterWireProtoAccount(cdc)
+
+// 	for _, obj := range additional {
+// 		cdc.RegisterInterface((*MyInterface2)(nil), nil)
+// 		cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
+// 	}
+
+// 	//cdc.RegisterConcrete(SendMsg{}, "github.com/cosmos/cosmos-sdk/bank/SendMsg", nil)
+
+// 	return AccountMapper{
+// 		key:   key,
+// 		proto: proto,
+// 		cdc:   cdc,
+// 	}
+// }
 
 func (am AccountMapper) NewAccountWithAddress(ctx Context, addr Address) Account {
 	acc := am.clonePrototype()

@@ -32,6 +32,7 @@ func TestKeeperGetSet(t *testing.T) {
 	ms, _, capKey := setupMultiStore()
 
 	ctx := sdk.NewContext(ms, abci.Header{}, false, nil)
+	accountMapper := sdk.NewAccountMapper(authKey, &auth.BaseAccount{})
 	stakeKeeper := NewKeeper(capKey, bank.NewCoinKeeper(nil))
 	addr := sdk.Address([]byte("some-address"))
 
@@ -58,7 +59,7 @@ func TestBonding(t *testing.T) {
 
 	ctx := sdk.NewContext(ms, abci.Header{}, false, nil)
 
-	accountMapper := auth.NewAccountMapper(authKey, &auth.BaseAccount{})
+	accountMapper := sdk.NewAccountMapper(authKey, &auth.BaseAccount{})
 	coinKeeper := bank.NewCoinKeeper(accountMapper)
 	stakeKeeper := NewKeeper(capKey, coinKeeper)
 	addr := sdk.Address([]byte("some-address"))
