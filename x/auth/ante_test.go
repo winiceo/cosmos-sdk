@@ -70,7 +70,7 @@ func newTestTxWithSignBytes(msg sdk.Msg, privs []crypto.PrivKey, seqs []int64, f
 func TestAnteHandlerSigErrors(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	mapper := sdk.NewAccountMapper(capKey, &BaseAccount{})
+	mapper := sdk.NewAccountMapper(capKey, &sdk.BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil)
 
@@ -109,7 +109,7 @@ func TestAnteHandlerSigErrors(t *testing.T) {
 func TestAnteHandlerSequences(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	mapper := sdk.NewAccountMapper(capKey, &BaseAccount{})
+	mapper := sdk.NewAccountMapper(capKey, &sdk.BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil)
 
@@ -173,7 +173,7 @@ func TestAnteHandlerSequences(t *testing.T) {
 func TestAnteHandlerFees(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	mapper := sdk.NewAccountMapper(capKey, &BaseAccount{})
+	mapper := sdk.NewAccountMapper(capKey, &sdk.BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil)
 
@@ -208,7 +208,7 @@ func TestAnteHandlerFees(t *testing.T) {
 func TestAnteHandlerBadSignBytes(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	mapper := sdk.NewAccountMapper(capKey, &BaseAccount{})
+	mapper := sdk.NewAccountMapper(capKey, &sdk.BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil)
 
@@ -281,7 +281,7 @@ func TestAnteHandlerBadSignBytes(t *testing.T) {
 func TestAnteHandlerSetPubKey(t *testing.T) {
 	// setup
 	ms, capKey := setupMultiStore()
-	mapper := sdk.NewAccountMapper(capKey, &BaseAccount{})
+	mapper := sdk.NewAccountMapper(capKey, &sdk.BaseAccount{})
 	anteHandler := NewAnteHandler(mapper)
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "mychainid"}, false, nil)
 
@@ -337,7 +337,7 @@ func setupMultiStore() (sdk.MultiStore, *sdk.KVStoreKey) {
 	// wire registration while we're at it ... TODO
 	var _ = oldwire.RegisterInterface(
 		struct{ sdk.Account }{},
-		oldwire.ConcreteType{&BaseAccount{}, 0x1},
+		oldwire.ConcreteType{&sdk.BaseAccount{}, 0x1},
 	)
 
 	return ms, capKey

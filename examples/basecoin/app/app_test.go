@@ -11,7 +11,6 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/examples/basecoin/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 
@@ -91,7 +90,7 @@ func newBasecoinApp() *BasecoinApp {
 	return NewBasecoinApp(logger, dbs)
 }
 
-func setGenesisAccounts(bapp *BasecoinApp, accs ...auth.BaseAccount) error {
+func setGenesisAccounts(bapp *BasecoinApp, accs ...sdk.BaseAccount) error {
 	genaccs := make([]*types.GenesisAccount, len(accs))
 	for i, acc := range accs {
 		genaccs[i] = types.NewGenesisAccount(&types.AppAccount{acc, accName})
@@ -140,7 +139,7 @@ func TestGenesis(t *testing.T) {
 	addr := pk.Address()
 	coins, err := sdk.ParseCoins("77foocoin,99barcoin")
 	require.Nil(t, err)
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr,
 		Coins:   coins,
 	}
@@ -168,7 +167,7 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	// Give 77 foocoin to the first key
 	coins, err := sdk.ParseCoins("77foocoin")
 	require.Nil(t, err)
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}
@@ -208,12 +207,12 @@ func TestSendMsgMultipleOut(t *testing.T) {
 	genCoins, err := sdk.ParseCoins("42foocoin")
 	require.Nil(t, err)
 
-	acc1 := auth.BaseAccount{
+	acc1 := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   genCoins,
 	}
 
-	acc2 := auth.BaseAccount{
+	acc2 := sdk.BaseAccount{
 		Address: addr2,
 		Coins:   genCoins,
 	}
@@ -236,17 +235,17 @@ func TestSengMsgMultipleInOut(t *testing.T) {
 	genCoins, err := sdk.ParseCoins("42foocoin")
 	require.Nil(t, err)
 
-	acc1 := auth.BaseAccount{
+	acc1 := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   genCoins,
 	}
 
-	acc2 := auth.BaseAccount{
+	acc2 := sdk.BaseAccount{
 		Address: addr2,
 		Coins:   genCoins,
 	}
 
-	acc4 := auth.BaseAccount{
+	acc4 := sdk.BaseAccount{
 		Address: addr4,
 		Coins:   genCoins,
 	}
@@ -270,7 +269,7 @@ func TestSendMsgDependent(t *testing.T) {
 	genCoins, err := sdk.ParseCoins("42foocoin")
 	require.Nil(t, err)
 
-	acc1 := auth.BaseAccount{
+	acc1 := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   genCoins,
 	}
@@ -298,7 +297,7 @@ func TestQuizMsg(t *testing.T) {
 	// Construct genesis state
 	// Construct some genesis bytes to reflect basecoin/types/AppAccount
 	coins := sdk.Coins{}
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}
@@ -331,7 +330,7 @@ func TestIBCMsgs(t *testing.T) {
 	sourceChain := "source-chain"
 	destChain := "dest-chain"
 
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}

@@ -12,7 +12,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/examples/democoin/types"
 	"github.com/cosmos/cosmos-sdk/examples/democoin/x/cool"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 
@@ -130,7 +129,7 @@ func TestGenesis(t *testing.T) {
 	addr := pk.Address()
 	coins, err := sdk.ParseCoins("77foocoin,99barcoin")
 	require.Nil(t, err)
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr,
 		Coins:   coins,
 	}
@@ -169,7 +168,7 @@ func TestSendMsgWithAccounts(t *testing.T) {
 	// Give 77 foocoin to the first key
 	coins, err := sdk.ParseCoins("77foocoin")
 	require.Nil(t, err)
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}
@@ -244,7 +243,7 @@ func TestQuizMsg(t *testing.T) {
 	// Construct genesis state
 	// Construct some genesis bytes to reflect democoin/types/AppAccount
 	coins := sdk.Coins{}
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}
@@ -296,7 +295,7 @@ func TestHandler(t *testing.T) {
 	destChain := "dest-chain"
 
 	vals := []abci.Validator{}
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: addr1,
 		Coins:   coins,
 	}

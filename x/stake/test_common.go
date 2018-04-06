@@ -15,7 +15,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/store"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 )
 
@@ -143,8 +142,8 @@ func createTestInput(t *testing.T, sender sdk.Address, isCheckTx bool, initCoins
 	ctx := sdk.NewContext(ms, abci.Header{ChainID: "foochainid"}, isCheckTx, nil)
 	cdc := makeTestCodec()
 	accountMapper := sdk.NewAccountMapper(
-		keyMain,             // target store
-		&auth.BaseAccount{}, // prototype
+		keyMain,            // target store
+		&sdk.BaseAccount{}, // prototype
 	)
 	ck := bank.NewCoinKeeper(accountMapper)
 	keeper := NewKeeper(ctx, cdc, keyStake, ck)

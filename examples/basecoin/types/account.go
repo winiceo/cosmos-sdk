@@ -3,18 +3,17 @@ package types
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
 var _ sdk.Account = (*AppAccount)(nil)
 
 // Custom extensions for this application.  This is just an example of
-// extending auth.BaseAccount with custom fields.
+// extending sdk.BaseAccount with custom fields.
 //
 // This is compatible with the stock auth.AccountStore, since
 // auth.AccountStore uses the flexible go-wire library.
 type AppAccount struct {
-	auth.BaseAccount
+	sdk.BaseAccount
 	Name string `json:"name"`
 }
 
@@ -61,7 +60,7 @@ func NewGenesisAccount(aa *AppAccount) *GenesisAccount {
 
 // convert GenesisAccount to AppAccount
 func (ga *GenesisAccount) ToAppAccount() (acc *AppAccount, err error) {
-	baseAcc := auth.BaseAccount{
+	baseAcc := sdk.BaseAccount{
 		Address: ga.Address,
 		Coins:   ga.Coins,
 	}

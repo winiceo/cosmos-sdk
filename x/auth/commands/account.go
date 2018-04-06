@@ -11,17 +11,16 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/builder"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/wire"
-	"github.com/cosmos/cosmos-sdk/x/auth"
 )
 
-// GetAccountCmd for the auth.BaseAccount type
+// GetAccountCmd for the sdk.BaseAccount type
 func GetAccountCmdDefault(storeName string, cdc *wire.Codec) *cobra.Command {
 	return GetAccountCmd(storeName, cdc, GetAccountDecoder(cdc))
 }
 
 func GetAccountDecoder(cdc *wire.Codec) sdk.AccountDecoder {
 	return func(accBytes []byte) (sdk.Account, error) {
-		acct := new(auth.BaseAccount)
+		acct := new(sdk.BaseAccount)
 		err := cdc.UnmarshalBinary(accBytes, &acct)
 		if err != nil {
 			panic(err)
