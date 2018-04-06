@@ -15,6 +15,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 	"github.com/cosmos/cosmos-sdk/x/simplestake"
+	"github.com/cosmos/cosmos-sdk/x/stake"
 
 	"github.com/cosmos/cosmos-sdk/examples/basecoin/types"
 )
@@ -32,7 +33,7 @@ type BasecoinApp struct {
 	capKeyMainStore    *sdk.KVStoreKey
 	capKeyAccountStore *sdk.KVStoreKey
 	capKeyIBCStore     *sdk.KVStoreKey
-	capKeyStakingStore *sdk.KVStoreKey
+	capKeyStakeStore   *sdk.KVStoreKey
 
 	// Manage getting and setting accounts
 	accountMapper sdk.AccountMapper
@@ -50,7 +51,7 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
-		capKeyStakingStore: sdk.NewKVStoreKey("stake"),
+		capKeyStakeStore:   sdk.NewKVStoreKey("stake"),
 	}
 
 	// Define the accountMapper.
@@ -63,11 +64,11 @@ func NewBasecoinApp(logger log.Logger, db dbm.DB) *BasecoinApp {
 	// Add handlers.
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
+	stakeKeeper := stake.NewKeeper(app.cdc, app.capKeyStakeStore, coinKeeper)
 	app.Router().
 		AddRoute("bank", bank.NewHandler(coinKeeper)).
 		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
-		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper))
+		AddRoute("stake", stake.NewHandler(stakeKeeper))
 
 	// Initialize BaseApp.
 	app.SetTxDecoder(app.txDecoder)
