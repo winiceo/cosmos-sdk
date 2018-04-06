@@ -63,19 +63,3 @@ func TestAccountMapperGetSet(t *testing.T) {
 	assert.NotNil(t, acc)
 	assert.Equal(t, newSequence, acc.GetSequence())
 }
-
-func TestAccountMapperSealed(t *testing.T) {
-	_, capKey := setupMultiStore()
-
-	// normal mapper exposes the wire codec
-	mapper := NewAccountMapper(capKey, &BaseAccount{})
-	assert.NotNil(t, mapper.WireCodec())
-
-	// seal mapper, should panic when we try to get the codec
-	mapperSealed := mapper.Seal()
-	assert.Panics(t, func() { mapperSealed.WireCodec() })
-
-	// another way to get a sealed mapper
-	mapperSealed = NewAccountMapperSealed(capKey, &BaseAccount{})
-	assert.Panics(t, func() { mapperSealed.WireCodec() })
-}
