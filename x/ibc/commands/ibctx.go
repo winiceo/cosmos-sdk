@@ -9,10 +9,8 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/context"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	wire "github.com/cosmos/cosmos-sdk/wire"
-
 	"github.com/cosmos/cosmos-sdk/x/ibc"
 )
 
@@ -38,7 +36,9 @@ type sendCommander struct {
 	cdc *wire.Codec
 }
 
-func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error {
+func (c sendCommander) sendIBCTransfer(cmd *cobra.Command,
+	args []string) error {
+
 	ctx := context.NewCoreContextFromViper()
 
 	// get the from address
@@ -59,7 +59,9 @@ func (c sendCommander) sendIBCTransfer(cmd *cobra.Command, args []string) error 
 		return err
 	}
 
-	fmt.Printf("Committed at block %d. Hash: %s\n", res.Height, res.Hash.String())
+	fmt.Printf("Committed at block %d. Hash: %s\n", res.Height,
+		res.Hash.String())
+
 	return nil
 }
 
@@ -77,8 +79,8 @@ func buildMsg(from sdk.Address) (sdk.Msg, error) {
 	}
 	to := sdk.Address(bz)
 
-	packet := ibc.NewIBCPacket(from, to, coins, viper.GetString(client.FlagChainID),
-		viper.GetString(flagChain))
+	packet := ibc.NewIBCPacket(from, to, coins,
+		viper.GetString(client.FlagChainID), viper.GetString(flagChain))
 
 	msg := ibc.IBCTransferMsg{
 		IBCPacket: packet,

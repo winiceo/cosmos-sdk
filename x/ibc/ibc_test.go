@@ -1,5 +1,7 @@
 package ibc
 
+// NOTE: AccountMapper/CoinKeeper and IBCMapper should use different StoreKey.
+
 import (
 	"testing"
 
@@ -16,58 +18,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 )
-
-// AccountMapper(/CoinKeeper) and IBCMapper should use different StoreKey later
-
-func defaultContext(key sdk.StoreKey) sdk.Context {
-	db := dbm.NewMemDB()
-	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
-	cms.LoadLatestVersion()
-	ctx := sdk.NewContext(cms, abci.Header{}, false, nil)
-	return ctx
-}
-
-func newAddress() crypto.Address {
-	return crypto.GenPrivKeyEd25519().PubKey().Address()
-}
-
-func getCoins(ck bank.CoinKeeper, ctx sdk.Context, addr crypto.Address) (sdk.Coins, sdk.Error) {
-	zero := sdk.Coins{}
-	return ck.AddCoins(ctx, addr, zero)
-}
-
-// custom tx codec
-// TODO: use new go-wire
-func makeCodec() *wire.Codec {
-
-	const msgTypeSend = 0x1
-	const msgTypeIssue = 0x2
-	const msgTypeQuiz = 0x3
-	const msgTypeSetTrend = 0x4
-	const msgTypeIBCTransferMsg = 0x5
-	const msgTypeIBCReceiveMsg = 0x6
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Msg }{},
-		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
-		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
-		oldwire.ConcreteType{IBCTransferMsg{}, msgTypeIBCTransferMsg},
-		oldwire.ConcreteType{IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-	)
-
-	const accTypeApp = 0x1
-	var _ = oldwire.RegisterInterface(
-		struct{ sdk.Account }{},
-		oldwire.ConcreteType{&auth.BaseAccount{}, accTypeApp},
-	)
-	cdc := wire.NewCodec()
-
-	// cdc.RegisterInterface((*sdk.Msg)(nil), nil)
-	// bank.RegisterWire(cdc)   // Register bank.[SendMsg,IssueMsg] types.
-	// crypto.RegisterWire(cdc) // Register crypto.[PubKey,PrivKey,Signature] types.
-	// ibc.RegisterWire(cdc) // Register ibc.[IBCTransferMsg, IBCReceiveMsg] types.
-	return cdc
-}
 
 func TestIBC(t *testing.T) {
 	cdc := makeCodec()
@@ -111,6 +61,7 @@ func TestIBC(t *testing.T) {
 	msg = IBCTransferMsg{
 		IBCPacket: packet,
 	}
+
 	res = h(ctx, msg)
 	assert.True(t, res.IsOK())
 
@@ -129,6 +80,7 @@ func TestIBC(t *testing.T) {
 		Relayer:   src,
 		Sequence:  0,
 	}
+
 	res = h(ctx, msg)
 	assert.True(t, res.IsOK())
 
@@ -144,4 +96,54 @@ func TestIBC(t *testing.T) {
 
 	igs = ibcm.GetIngressSequence(ctx, chainid)
 	assert.Equal(t, igs, int64(1))
+}
+
+// ---------------------------------------
+// Helpers
+
+func defaultContext(key sdk.StoreKey) sdk.Context {
+	db := dbm.NewMemDB()
+	cms := store.NewCommitMultiStore(db)
+	cms.MountStoreWithDB(key, sdk.StoreTypeIAVL, db)
+	cms.LoadLatestVersion()
+	ctx := sdk.NewContext(cms, abci.Header{}, false, nil)
+	return ctx
+}
+
+func newAddress() crypto.Address {
+	return crypto.GenPrivKeyEd25519().PubKey().Address()
+}
+
+func getCoins(ck bank.CoinKeeper, ctx sdk.Context,
+	addr crypto.Address) (sdk.Coins, sdk.Error) {
+
+	zero := sdk.Coins{}
+	return ck.AddCoins(ctx, addr, zero)
+}
+
+// custom tx codec
+// TODO: upgrade to go-amino
+func makeCodec() *wire.Codec {
+	const msgTypeSend = 0x1
+	const msgTypeIssue = 0x2
+	const msgTypeQuiz = 0x3
+	const msgTypeSetTrend = 0x4
+	const msgTypeIBCTransferMsg = 0x5
+	const msgTypeIBCReceiveMsg = 0x6
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Msg }{},
+		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
+		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
+		oldwire.ConcreteType{IBCTransferMsg{}, msgTypeIBCTransferMsg},
+		oldwire.ConcreteType{IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
+	)
+
+	const accTypeApp = 0x1
+	var _ = oldwire.RegisterInterface(
+		struct{ sdk.Account }{},
+		oldwire.ConcreteType{&auth.BaseAccount{}, accTypeApp},
+	)
+
+	cdc := wire.NewCodec()
+	return cdc
 }

@@ -7,15 +7,15 @@ import (
 	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
+// IBCMapper stores IBC packets under a specific store key in the multi store
+// with the encoding provided by its codec.
 type IBCMapper struct {
 	key sdk.StoreKey
 	cdc *wire.Codec
 }
 
-// XXX: The IBCMapper should not take a CoinKeeper. Rather have the CoinKeeper
-// take an IBCMapper.
+// NewIBCMapper returns a new IBCMapper.
 func NewIBCMapper(cdc *wire.Codec, key sdk.StoreKey) IBCMapper {
-	// XXX: How are these codecs supposed to work?
 	return IBCMapper{
 		key: key,
 		cdc: cdc,
@@ -26,20 +26,15 @@ func NewIBCMapper(cdc *wire.Codec, key sdk.StoreKey) IBCMapper {
 // only be invoked from another module directly and not through a user
 // transaction.
 // TODO: Handle invalid IBC packets and return errors.
-func (ibcm IBCMapper) PostIBCPacket(ctx sdk.Context, packet IBCPacket) sdk.Error {
-	// write everything into the state
-	store := ctx.KVStore(ibcm.key)
-	index := ibcm.getEgressLength(store, packet.DestChain)
-	bz, err := ibcm.cdc.MarshalBinary(packet)
-	if err != nil {
-		panic(err)
-	}
+func (ibcm IBCMapper) PostIBCPacket(ctx sdk.Context,
+	packet IBCPacket) sdk.Error {
 
+	store := ctx.KVStore(ibcm.key)
+	bz := ibcm.cdc.MarshalBinaryPanic(packet)
+
+	index := ibcm.getEgressLength(store, packet.DestChain)
 	store.Set(EgressKey(packet.DestChain, index), bz)
-	bz, err = ibcm.cdc.MarshalBinary(int64(index + 1))
-	if err != nil {
-		panic(err)
-	}
+	bz = ibcm.cdc.MarshalBinary(int64(index + 1))
 	store.Set(EgressLengthKey(packet.DestChain), bz)
 
 	return nil
@@ -50,64 +45,59 @@ func (ibcm IBCMapper) PostIBCPacket(ctx sdk.Context, packet IBCPacket) sdk.Error
 // to the appropriate callbacks.
 // XXX: For now this handles all interactions with the CoinKeeper.
 // XXX: This needs to do some authentication checking.
-func (ibcm IBCMapper) ReceiveIBCPacket(ctx sdk.Context, packet IBCPacket) sdk.Error {
+func (ibcm IBCMapper) ReceiveIBCPacket(ctx sdk.Context,
+	packet IBCPacket) sdk.Error {
+
 	return nil
 }
 
-// --------------------------
-// Functions for accessing the underlying KVStore.
+func (ibcm IBCMapper) GetIngressSequence(ctx sdk.Context,
+	srcChain string) int64 {
 
-func marshalBinaryPanic(cdc *wire.Codec, value interface{}) []byte {
-	res, err := cdc.MarshalBinary(value)
-	if err != nil {
-		panic(err)
-	}
-	return res
-}
-
-func unmarshalBinaryPanic(cdc *wire.Codec, bz []byte, ptr interface{}) {
-	err := cdc.UnmarshalBinary(bz, ptr)
-	if err != nil {
-		panic(err)
-	}
-}
-
-func (ibcm IBCMapper) GetIngressSequence(ctx sdk.Context, srcChain string) int64 {
 	store := ctx.KVStore(ibcm.key)
 	key := IngressSequenceKey(srcChain)
 
 	bz := store.Get(key)
 	if bz == nil {
-		zero := marshalBinaryPanic(ibcm.cdc, int64(0))
+		zero := ibcm.cdc.MarshalBinaryPanic(int64(0))
 		store.Set(key, zero)
 		return 0
 	}
 
 	var res int64
-	unmarshalBinaryPanic(ibcm.cdc, bz, &res)
+	ibcm.cdc.UnmarshalBinaryPanic(bz, &res)
 	return res
 }
 
-func (ibcm IBCMapper) SetIngressSequence(ctx sdk.Context, srcChain string, sequence int64) {
+func (ibcm IBCMapper) SetIngressSequence(ctx sdk.Context, srcChain string,
+	sequence int64) {
+
 	store := ctx.KVStore(ibcm.key)
 	key := IngressSequenceKey(srcChain)
 
-	bz := marshalBinaryPanic(ibcm.cdc, sequence)
+	bz := ibcm.cdc.MarshalBinaryPanic(sequence)
 	store.Set(key, bz)
 }
 
 // Retrieves the index of the currently stored outgoing IBC packets.
-func (ibcm IBCMapper) getEgressLength(store sdk.KVStore, destChain string) int64 {
+func (ibcm IBCMapper) getEgressLength(store sdk.KVStore,
+	destChain string) int64 {
+
 	bz := store.Get(EgressLengthKey(destChain))
 	if bz == nil {
-		zero := marshalBinaryPanic(ibcm.cdc, int64(0))
+		zero := ibcm.cdc.MarshalBinaryPanic(int64(0))
 		store.Set(EgressLengthKey(destChain), zero)
 		return 0
 	}
+
 	var res int64
-	unmarshalBinaryPanic(ibcm.cdc, bz, &res)
+	ibcm.cdc.UnmarshalBinaryPanic(bz, &res)
+
 	return res
 }
+
+// ----------------------------
+// Store keys for the IBC module.
 
 // Stores an outgoing IBC packet under "egress/chain_id/index".
 func EgressKey(destChain string, index int64) []byte {

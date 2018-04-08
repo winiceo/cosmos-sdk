@@ -21,8 +21,11 @@ func NewHandler(ibcm IBCMapper, ck bank.CoinKeeper) sdk.Handler {
 	}
 }
 
-// IBCTransferMsg deducts coins from the account and creates an egress IBC packet.
-func handleIBCTransferMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper, msg IBCTransferMsg) sdk.Result {
+// IBCTransferMsg deducts coins from the account and creates an egress IBC
+// packet.
+func handleIBCTransferMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper,
+	msg IBCTransferMsg) sdk.Result {
+
 	packet := msg.IBCPacket
 
 	_, err := ck.SubtractCoins(ctx, packet.SrcAddr, packet.Coins)
@@ -35,11 +38,15 @@ func handleIBCTransferMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper, m
 		return err.Result()
 	}
 
+	// TODO: Return sensible meta data to Tendermint.
 	return sdk.Result{}
 }
 
-// IBCReceiveMsg adds coins to the destination address and creates an ingress IBC packet.
-func handleIBCReceiveMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper, msg IBCReceiveMsg) sdk.Result {
+// IBCReceiveMsg handles an incoming IBC packet. It adds coins to the
+// destination address and increments the ingress sequence number.
+func handleIBCReceiveMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper,
+	msg IBCReceiveMsg) sdk.Result {
+
 	packet := msg.IBCPacket
 
 	seq := ibcm.GetIngressSequence(ctx, packet.SrcChain)
@@ -54,5 +61,6 @@ func handleIBCReceiveMsg(ctx sdk.Context, ibcm IBCMapper, ck bank.CoinKeeper, ms
 
 	ibcm.SetIngressSequence(ctx, packet.SrcChain, seq+1)
 
+	// TODO: Return sensible meta data to Tendermint.
 	return sdk.Result{}
 }

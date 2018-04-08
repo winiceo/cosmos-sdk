@@ -2,7 +2,6 @@ package ibc
 
 import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	wire "github.com/cosmos/cosmos-sdk/wire"
 )
 
@@ -107,7 +106,6 @@ func (msg IBCReceiveMsg) ValidateBasic() sdk.Error {
 	return msg.IBCPacket.ValidateBasic()
 }
 
-// x/bank/tx.go SendMsg.GetSigners()
 func (msg IBCReceiveMsg) GetSigners() []sdk.Address {
 	return []sdk.Address{msg.Relayer}
 }

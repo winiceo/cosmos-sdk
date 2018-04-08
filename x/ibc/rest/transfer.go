@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
 	"github.com/tendermint/go-crypto/keys"
 
 	"github.com/cosmos/cosmos-sdk/client/context"
@@ -27,7 +28,9 @@ type transferBody struct {
 
 // TransferRequestHandler - http request handler to transfer coins to a address
 // on a different chain via IBC
-func TransferRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.ResponseWriter, *http.Request) {
+func TransferRequestHandler(cdc *wire.Codec,
+	kb keys.Keybase) func(http.ResponseWriter, *http.Request) {
+
 	c := commands.Commander{cdc}
 	ctx := context.NewCoreContextFromViper()
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -66,12 +69,14 @@ func TransferRequestHandler(cdc *wire.Codec, kb keys.Keybase) func(http.Response
 		to := sdk.Address(bz)
 
 		// build message
-		packet := ibc.NewIBCPacket(info.PubKey.Address(), to, m.Amount, m.SrcChainID, destChainID)
+		packet := ibc.NewIBCPacket(info.PubKey.Address(), to, m.Amount,
+			m.SrcChainID, destChainID)
 		msg := ibc.IBCTransferMsg{packet}
 
 		// sign
 		ctx = ctx.WithSequence(m.Sequence)
-		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, msg, c.Cdc)
+		txBytes, err := ctx.SignAndBuild(m.LocalAccountName, m.Password, msg,
+			c.Cdc)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(err.Error()))

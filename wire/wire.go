@@ -19,6 +19,15 @@ func (cdc *Codec) MarshalBinary(o interface{}) ([]byte, error) {
 	return w.Bytes(), *err
 }
 
+// MarshalBinaryPanic calls MarshalBinary but panics on error.
+func (cdc *Codec) MarshalBinaryPanic(o interface{}) []byte {
+	res, err := cdc.MarshalBinary(o)
+	if err != nil {
+		panic(err)
+	}
+	return res
+}
+
 func (cdc *Codec) UnmarshalBinary(bz []byte, o interface{}) error {
 	r, n, err := bytes.NewBuffer(bz), new(int), new(error)
 
@@ -29,6 +38,14 @@ func (cdc *Codec) UnmarshalBinary(bz []byte, o interface{}) error {
 		wire.ReadBinary(o, r, len(bz), n, err)
 	}
 	return *err
+}
+
+// UnmarshalBinaryPanic calls UnmarshalBinary but panics on error.
+func (cdc *Codec) UnmarshalBinaryPanic(bz []byte, o interface{}) {
+	err := cdc.UnmarshalBinary(bz, o)
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (cdc *Codec) MarshalJSON(o interface{}) ([]byte, error) {
