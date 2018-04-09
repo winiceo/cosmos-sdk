@@ -34,7 +34,7 @@ func (ibcm IBCMapper) PostIBCPacket(ctx sdk.Context,
 
 	index := ibcm.getEgressLength(store, packet.DestChain)
 	store.Set(EgressKey(packet.DestChain, index), bz)
-	bz = ibcm.cdc.MarshalBinary(int64(index + 1))
+	bz = ibcm.cdc.MarshalBinaryPanic(int64(index + 1))
 	store.Set(EgressLengthKey(packet.DestChain), bz)
 
 	return nil
