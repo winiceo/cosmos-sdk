@@ -51,6 +51,7 @@ func NewEthermintApp(logger log.Logger, dbs map[string]dbm.DB) *EthermintApp {
 		BaseApp:            bam.NewBaseApp(appName, logger, dbs["main"]),
 		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
+		capKeyAccountStore: sdk.NewKVStoreKey("acc"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
 		capKeyStakingStore: sdk.NewKVStoreKey("staking"),
 	}
@@ -141,7 +142,7 @@ func (app *EthermintApp) txDecoder(txBytes []byte) (sdk.Tx, sdk.Error) {
 		if ethrawtx, ok := tx.GetMsg().(eth.RawTxMsg); ok {
 			ethrawtx.DecodeRaw()
 		} else {
-			return nil, sdk.ErrTxDecode(fmt.Sprintf("tx is interpreted as EthRaw, but cannot be cast to apppropriate type: %x"))
+			return nil, sdk.ErrTxDecode(fmt.Sprintf("tx is interpreted as EthRaw, but cannot be cast to apppropriate type: %x", ethrawtx))
 		}
 	}
 	return tx, nil
