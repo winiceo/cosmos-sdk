@@ -1,9 +1,8 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/spf13/cobra"
 
@@ -14,64 +13,51 @@ import (
 
 	"github.com/cosmos/cosmos-sdk/examples/ethermint/app"
 	"github.com/cosmos/cosmos-sdk/server"
-	"github.com/cosmos/cosmos-sdk/version"
 )
 
 // ethermintdCmd is the entry point for this binary
 var (
-	ethermintdCmd = &cobra.Command{
-		Use:   "ethermintd",
-		Short: "Ethermint Daemon (server)",
+	context = server.NewDefaultContext()
+	rootCmd = &cobra.Command{
+		Use:               "ethermintd",
+		Short:             "Ethermint Daemon (server)",
+		PersistentPreRunE: server.PersistentPreRunEFn(context),
 	}
 )
 
-// defaultOptions sets up the app_options for the
-// default genesis file
-func defaultOptions(args []string) (json.RawMessage, error) {
-	addr, secret, err := server.GenerateCoinKey()
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("Secret phrase to access coins:")
-	fmt.Println(secret)
-
-	opts := fmt.Sprintf(`{
-      "accounts": [{
-        "address": "%s",
-        "coins": [
-          {
-            "denom": "mycoin",
-            "amount": 9007199254740992
-          }
-        ]
-      }]
-    }`, addr)
-	return json.RawMessage(opts), nil
-}
-
 func generateApp(rootDir string, logger log.Logger) (abci.Application, error) {
-	db, err := dbm.NewGoLevelDB("ethermint", rootDir)
+	dataDir := filepath.Join(rootDir, "data")
+	dbMain, err := dbm.NewGoLevelDB("ethermint", dataDir)
 	if err != nil {
 		return nil, err
 	}
-	bapp := app.NewEthermintApp(logger, db)
+	dbAcc, err := dbm.NewGoLevelDB("ethermint-acc", dataDir)
+	if err != nil {
+		return nil, err
+	}
+	dbIBC, err := dbm.NewGoLevelDB("ethermint-ibc", dataDir)
+	if err != nil {
+		return nil, err
+	}
+	dbStaking, err := dbm.NewGoLevelDB("ethermint-staking", dataDir)
+	if err != nil {
+		return nil, err
+	}
+	dbs := map[string]dbm.DB{
+		"main":    dbMain,
+		"acc":     dbAcc,
+		"ibc":     dbIBC,
+		"staking": dbStaking,
+	}
+	bapp := app.NewEthermintApp(logger, dbs)
 	return bapp, nil
 }
 
 func main() {
-	// TODO: set logger through CLI
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout)).
-		With("module", "main")
-
-	ethermintdCmd.AddCommand(
-		server.InitCmd(defaultOptions, logger),
-		server.StartCmd(generateApp, logger),
-		server.UnsafeResetAllCmd(logger),
-		version.VersionCmd,
-	)
+	server.AddCommands(rootCmd, server.DefaultGenAppState, generateApp, context)
 
 	// prepare and add flags
 	rootDir := os.ExpandEnv("$HOME/.ethermintd")
-	executor := cli.PrepareBaseCmd(ethermintdCmd, "EM", rootDir)
+	executor := cli.PrepareBaseCmd(rootCmd, "EM", rootDir)
 	executor.Execute()
 }

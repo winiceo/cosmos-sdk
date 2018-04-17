@@ -16,11 +16,9 @@ import (
 	"github.com/cosmos/cosmos-sdk/x/auth"
 	"github.com/cosmos/cosmos-sdk/x/bank"
 	"github.com/cosmos/cosmos-sdk/x/ibc"
-	"github.com/cosmos/cosmos-sdk/x/staking"
+	"github.com/cosmos/cosmos-sdk/x/simplestake"
 
 	"github.com/cosmos/cosmos-sdk/examples/ethermint/types"
-	"github.com/cosmos/cosmos-sdk/examples/ethermint/x/cool"
-	"github.com/cosmos/cosmos-sdk/examples/ethermint/x/sketchy"
 	"github.com/cosmos/cosmos-sdk/examples/ethermint/x/eth"
 
 	"github.com/ethereum/go-ethereum/rlp"
@@ -39,6 +37,7 @@ type EthermintApp struct {
 
 	// keys to access the substores
 	capKeyMainStore    *sdk.KVStoreKey
+	capKeyAccountStore *sdk.KVStoreKey
 	capKeyIBCStore     *sdk.KVStoreKey
 	capKeyStakingStore *sdk.KVStoreKey
 
@@ -46,10 +45,10 @@ type EthermintApp struct {
 	accountMapper sdk.AccountMapper
 }
 
-func NewEthermintApp(logger log.Logger, db dbm.DB) *EthermintApp {
+func NewEthermintApp(logger log.Logger, dbs map[string]dbm.DB) *EthermintApp {
 	// create your application object
 	var app = &EthermintApp{
-		BaseApp:            bam.NewBaseApp(appName, logger, db),
+		BaseApp:            bam.NewBaseApp(appName, logger, dbs["main"]),
 		cdc:                MakeCodec(),
 		capKeyMainStore:    sdk.NewKVStoreKey("main"),
 		capKeyIBCStore:     sdk.NewKVStoreKey("ibc"),
@@ -64,20 +63,20 @@ func NewEthermintApp(logger log.Logger, db dbm.DB) *EthermintApp {
 
 	// add handlers
 	coinKeeper := bank.NewCoinKeeper(app.accountMapper)
-	coolMapper := cool.NewMapper(app.capKeyMainStore)
 	ibcMapper := ibc.NewIBCMapper(app.cdc, app.capKeyIBCStore)
-	stakingMapper := staking.NewMapper(app.capKeyStakingStore)
+	stakeKeeper := simplestake.NewKeeper(app.capKeyStakingStore, coinKeeper)
 	app.Router().
 		AddRoute("bank", bank.NewHandler(coinKeeper)).
-		AddRoute("cool", cool.NewHandler(coinKeeper, coolMapper)).
-		AddRoute("sketchy", sketchy.NewHandler()).
 		AddRoute("ibc", ibc.NewHandler(ibcMapper, coinKeeper)).
-		AddRoute("staking", staking.NewHandler(stakingMapper, coinKeeper))
+		AddRoute("simplestake", simplestake.NewHandler(stakeKeeper))
 
 	// initialize BaseApp
 	app.SetTxDecoder(app.txDecoder)
 	app.SetInitChainer(app.initChainer)
-	app.MountStoresIAVL(app.capKeyMainStore, app.capKeyIBCStore, app.capKeyStakingStore)
+	app.MountStoreWithDB(app.capKeyMainStore, sdk.StoreTypeIAVL, dbs["main"])
+	app.MountStoreWithDB(app.capKeyAccountStore, sdk.StoreTypeIAVL, dbs["acc"])
+	app.MountStoreWithDB(app.capKeyIBCStore, sdk.StoreTypeIAVL, dbs["ibc"])
+	app.MountStoreWithDB(app.capKeyStakingStore, sdk.StoreTypeIAVL, dbs["staking"])
 	app.SetAnteHandler(auth.NewAnteHandler(app.accountMapper))
 	err := app.LoadLatestVersion(app.capKeyMainStore)
 	if err != nil {
@@ -103,12 +102,10 @@ func MakeCodec() *wire.Codec {
 		struct{ sdk.Msg }{},
 		oldwire.ConcreteType{bank.SendMsg{}, msgTypeSend},
 		oldwire.ConcreteType{bank.IssueMsg{}, msgTypeIssue},
-		oldwire.ConcreteType{cool.QuizMsg{}, msgTypeQuiz},
-		oldwire.ConcreteType{cool.SetTrendMsg{}, msgTypeSetTrend},
 		oldwire.ConcreteType{ibc.IBCTransferMsg{}, msgTypeIBCTransferMsg},
 		oldwire.ConcreteType{ibc.IBCReceiveMsg{}, msgTypeIBCReceiveMsg},
-		oldwire.ConcreteType{staking.BondMsg{}, msgTypeBondMsg},
-		oldwire.ConcreteType{staking.UnbondMsg{}, msgTypeUnbondMsg},
+		oldwire.ConcreteType{simplestake.BondMsg{}, msgTypeBondMsg},
+		oldwire.ConcreteType{simplestake.UnbondMsg{}, msgTypeUnbondMsg},
 		oldwire.ConcreteType{eth.RawTxMsg{}, msgTypeRawEthTxMsg},
 	)
 
